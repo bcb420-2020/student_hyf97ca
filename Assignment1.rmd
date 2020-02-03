@@ -1,0 +1,64 @@
+---
+title: Assignment 1 Notebook
+author: Yi Fei Huang
+date: 2020-02-04
+output: html_notebook
+---
+## 0- Load libraries
+```{R, error=FALSE, message=FALSE}
+library("GEOquery")
+library("biomaRt")
+library("edgeR")
+```
+
+
+## 1– Download the data
+
+I chose to use the GEO web app to look for an appropriate dataset.
+
+As recorded in my journal:
+
+"I selected Homo sapiens as organism, put publication date from 2017 January through 2020 December, specified sample counts from 6 to 12, and the presence of a supplementary file in TXT format.
+In the actual search query, I used '(gse[filter]) neural'."
+
+From the results, on page 2 as of 2020-02-02 I selected GSE127268, which was a heterozygous dataset, then thought better and selected GSE120200, a sister homozygous dataset because homozygous data should result in more pronounced differential expression.
+
+Some basic info about the dataset from GEO, using code adapted from Slide 17 in Lecture 4:
+```{R, message=FALSE}
+gse <- getGEO("GSE120200",GSEMatrix=FALSE)
+current_gpl <- names(GPLList(gse))[1]
+current_gpl_info <- Meta(getGEO(current_gpl))
+```
+
+**Platform title:** `r current_gpl_info$title`
+
+**Last update date:** `r current_gpl_info$last_update_date`
+
+**Organisms:**  `r current_gpl_info$organism`
+
+Note that inside the paper, chicken embryos were used at various stages of experimentation. This dataset, however, is only about cultured human neurons.
+
+Using the code from slide 56 of Lecture 3:
+```{R}
+sfiles = getGEOSuppFiles('GSE120200')
+counts = read.delim(rownames(sfiles)[1],header=TRUE, check.names = FALSE)
+head(counts)
+```
+### 2- 
+
+### 3- convert to hugo
+
+```{R}
+ensembl <- useMart("ensembl")
+conversion_stash <- "data_id_conversion.rds"
+if(file.exists(conversion_stash)){
+  data_id_conversion <- readRDS(conversion_stash)
+} else {
+  data_id_conversion <- getBM(attributes = c("ensembl_gene_id","hgnc_symbol"),
+                            filters = c("ensembl_gene_id"),
+                            values = counts$Geneid,
+                            mart = ensembl)
+  saveRDS(data_id_conversion, conversion_stash)
+}
+
+```
