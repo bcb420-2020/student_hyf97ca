@@ -32,6 +32,8 @@ current_gpl_info <- Meta(getGEO(current_gpl))
 
 **Platform title:** `r current_gpl_info$title`
 
+**Submission date** `r current_gpl_info$submission_date`
+
 **Last update date:** `r current_gpl_info$last_update_date`
 
 **Organisms:**  `r current_gpl_info$organism`
