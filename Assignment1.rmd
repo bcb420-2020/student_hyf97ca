@@ -14,7 +14,7 @@ library("edgeR")
 
 ## 1– Download the data
 
-I chose to use the GEO web app to look for an appropriate dataset.
+The GEO web app was chosen in lieu of R packages to look for an appropriate dataset.
 
 As recorded in my journal:
 
@@ -40,7 +40,7 @@ current_gpl_info <- Meta(getGEO(current_gpl))
 
 To summarize the paper, they collected wild type cultured human neurons and edited cell lines that knocked out the ASXL1 gene. The knockout was shown to interfere with neural crest formation. Part of the experiment was global RNA sequencing to find what changes in expression occur after ASXL1 is knocked out.
 
-Note that inside the paper, chicken embryos were used at various stages of experimentation. This dataset, however, is only about cultured human neurons.
+Note that inside the paper, chicken embryos were used at various stages of experimentation to demonstrate migration. This dataset, however, only contains raw counts from high-thoroughput RNA sequencing of cultured human neurons.
 
 Using the code from slide 56 of Lecture 3:
 ```{R}
@@ -56,7 +56,7 @@ head(counts_matrix)
 ```{R}
 #are there any duplicates? Code adapted from Lecture 4 slide 23
 summarized_gene_counts <- sort(table(counts$Geneid),decreasing = TRUE)
-summarized_gene_counts[which(summarized_gene_counts>1)[1:10]]
+length(summarized_gene_counts[which(summarized_gene_counts>1)])
 
 ```
 This means all the ensembl IDs are identical.
@@ -81,8 +81,8 @@ So what is ERCC?
 sum(rowSums(counts[grep("ERCC", counts$Geneid),-1]))
 
 ```
-It looks like they will be filtered out for having a low count of 0, so we can ignore them safely.
-This also tells us that there wasn't any external contamination found using the ERCC kit.
+It looks like all of them will be filtered out for having a low count of 0, so they can be ignored safely.
+This also shows that there wasn't any external contamination found using the ERCC kit.
 
 Filtering out low counts using code adapted from Lecture 4 Slide 25:
 ```{R}
@@ -96,7 +96,7 @@ counts_filtered <- counts[keep,]
 rownames(counts_filtered) = c()
 dim(counts_filtered)
 ```
-We removed two thirds of the gene ids with this filtering step.
+~Two thirds of the gene ids were removed with this filtering step.
 
 Now to make graphs. Adapting the code from Slide 36 in Lecture 4:
 ```{R}
@@ -108,13 +108,13 @@ boxplot(boxplot_data, xlab = "Samples", ylab = "log2 CPM",
         cex.axis = 0.5, main = "ASXL1 RNASeq Samples")
 abline(h = median(apply(boxplot_data, 2, median)), col = "orangered", lwd = 0.6, lty = "dashed")
 ```
-Strange that we are getting outliers of -inf. That means there has to be 0 values. but didn't we filter them out?
+Strange that there are outliers of -inf. This means that there has to be 0 values in the dataset after filtering step.
 
 ```{R}
 min(boxplot_data)
 min(counts_filtered[,-1])
 ```
-There are probably 0s in the columns.
+IT turns out that we didn't filter out all low expressions. There are 0s in some but not all of the experiments for a particular gene. It is probably inconsequential.
 
 Density plot: (Using code adapted from Lecture 4 slide 38)
 ```{R}
@@ -140,7 +140,7 @@ plot(counts_density[[1]], xlim=xlim, ylim=ylim, type="n",
 ```
 The different samples look pretty close to each other, with the exception of WT2, but even that is still a reasonable deviation in shape.
 
-### 3- convert to HUGO
+### 3- convert to HUGO Gene Nomenclature Committee symbols
 ```{R}
 conversion_stash <- "data_id_conversion.rds"
 if(file.exists(conversion_stash)){
@@ -156,7 +156,7 @@ if(file.exists(conversion_stash)){
 head(data_id_conversion)
 ```
 
-If the ensembl servers are flaky I have included a file called "data_id_conversion_backup.rds" which can be renamed to "data_id_conversion.rds" to be able to proceed.
+**If the ensembl servers are nonoperational I have included a file called "data_id_conversion_backup.rds" which can be renamed to "data_id_conversion.rds" to be able to proceed.**
 
 ```{R}
 #Duplicate hgnc symbols?
@@ -172,13 +172,14 @@ dim(summarized_ensemble_counts[which(summarized_ensemble_counts>1)])
 ```
 There are `r dim(summarized_hgnc_counts[which(summarized_hgnc_counts>1)])` duplicated hgnc symbols when mapped from ensembl gene ids.
 
-I looked on the [ensembl website](https://useast.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000225845;r=CHR_HSCHR6_MHC_MCF_CTG1:32470120-32483292) as well as the [HGNC website](https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:1142) and found that at least for BTNL2, there were multiple splices for it that corresponded to all the different ensembl gene ids. 
+According to the [Ensembl website](https://useast.ensembl.org/Homo_sapiens/Gene/Summary?g=ENSG00000225845;r=CHR_HSCHR6_MHC_MCF_CTG1:32470120-32483292) as well as the [HGNC website](https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/HGNC:1142), at least for BTNL2, there were multiple splices for it that corresponded to all the different Ensembl gene ids. 
 
 In such a case, according to MacDonald (2016) on [Bioconductor Forums](https://support.bioconductor.org/p/90185/) if the transcript lengths were significantly different, summing up all the reads wouldn't necessarily be the correct decision. There is a good chance, however, that the genes in question do not necessarily have reads, and in the step where we remove all the entries that have low counts they might not exist anymore. Note that we made the gene id mapping using the ids before the filtering step.
 
-Essentially like in slide 24 of Lecture 4, we are ignoring the problem and hope that we don't actually have to deal with it.
+Essentially like in slide 24 of Lecture 4, the problem is ignored in the hopes that it doesn't actually have to be dealt with.
 
 There are also `r dim(summarized_hgnc_counts[which(summarized_ensemble_counts>1)])` duplicated ensembl ids in the mapping.
+
 Since this isn't a high number, we can look at them manually and see what happened:
 ```{R}
 dups <- which(summarized_ensemble_counts>1)
@@ -188,7 +189,7 @@ Googling C12orf74, it seems to be an older symbol. I presume the later entry for
 
 ### 4 - Normalization
 
-Apply TMM by using edgeR. I picked TMM arbitrarily because it was what we used in lecture, it is specialized for RNA-seq, and in addition, it is what I usually hear about in discussions of normalization.
+Apply TMM by using edgeR. TMM was picked arbitrarily because it was what was used in lecture, it is specialized for RNA-seq, and in addition, it is what I usually hear about in discussions of normalization.
 
 ```{R}
 counts_filtered_matrix <- as.matrix(counts_filtered[,-1])
@@ -247,7 +248,7 @@ boxplot(boxplot_data, xlab = "Samples", ylab = "log2 CPM",
         cex.axis = 0.5, main = "Not Normalized")
 abline(h = median(apply(boxplot_data, 2, median)), col = "orangered", lwd = 0.6, lty = "dashed")
 ```
-Looking at these plots, I don't see much, if any difference. Nothing striking like what was presented in lecture.
+Looking at these plots, there isn't much, if any difference. Nothing striking like what was presented in lecture.
 
 ```{R}
 
@@ -268,7 +269,7 @@ plotMeanVar(d, show.raw.vars = TRUE,
 ```
 
 The MDS plot looks good, WT and HOM are well separated into different quadrants.
-The BCV plot and mean-variance plot look similar to the ones in the slides.
+The BCV plot and mean-variance plot look similar to the ones in the slides, so they are probably ok as well.
 
 ### 5 - Apply identifier mapping
 
@@ -311,11 +312,11 @@ sample(final_a1_data, 10)
 ```
 ### Final questions
 
-I already answered most of these questions above, but I will formalize them here.
+I already answered some of these questions above, but I will formalize them here anyways.
 
 * What are the control and test conditions of the dataset?
 
-    Control condition: wild type ASXL1 gene. Test condition: edited ASXL1 gene to knock it out.
+    Control condition: wild type ASXL1 gene in human induced pluripotent stem cell differentiated neural crest progenitors. Test condition: CRISPR/Cas9 edited ASXL1 gene (knockout) in human embryonic stem cell differentiated neural crest progenitors.
 
 * Why is the dataset of interest to you?
 
@@ -323,19 +324,19 @@ I already answered most of these questions above, but I will formalize them here
 
 * Were there expression values that were not unique for specific genes? How did you handle these?
 
-    After the filtering step, there were no expression values that were not unique.
+    After the filtering step, there were no expression values that were not unique. I would've summed them without adjustments, against the recommendations of people on bioinformatics forums, assuming they were alternative splices of transcripts of similar length.
 
 * Were there expression values that could not be mapped to current HUGO symbols?
 
-    There were many expression values that could not be mapped to current HUGO symbols. Most of them appear to be in non-coding regions.
+    There were many expression values that could not be mapped to current HUGO symbols. Most of them appear to be in non-coding regions so I am not worried.
 
 * How many outliers were removed?
 
-    I didn't remove any outliers of extreme expression, but almost two-thirds of the dataset was removed because of low expression.
+    I didn't remove any outliers of extremely high expression, but almost two-thirds of the dataset was removed because of low expression.
 
 * How did you handle replicates?
 
-    Since the experiment was relatively simple, I simply made WT and HOM groups for control and experimental samples.
+    Since the experiment was relatively simple, I simply made WT and HOM groups for control and experimental samples when analyzing using edgeR.
 
 * What is the final coverage of your dataset?
 
@@ -343,3 +344,12 @@ I already answered most of these questions above, but I will formalize them here
     
 # References
 
+Cunningham, F., Achuthan, P., Akanni, W., Allen, J., Amode, M., Armean, I. M., . . . Flicek, P. (2018). Ensembl 2019. Nucleic Acids Research, 47, D745-D751. doi:10.1093/nar/gky1113
+
+External RNA controls consortium. Retrieved from https://www.nist.gov/programs-projects/external-rna-controls-consortium
+
+HGNC Database, HUGO Gene Nomenclature Committee (HGNC), European Molecular Biology Laboratory, European Bioinformatics Institute (EMBL-EBI), Wellcome Genome Campus, Hinxton, Cambridge CB10 1SD, United Kingdom. https://www.genenames.org.
+
+Jimbou [Online name]. (2015). Question: Aggregate multiple rows based on common values in given columns. Retrieved from https://www.biostars.org/p/167028/
+
+MacDonald, J. W. (2016). Question: Filtering read counts matrix: How to deal with duplicated gene symbols, different ENSEMBL ids. Retrieved from https://support.bioconductor.org/p/90185/
