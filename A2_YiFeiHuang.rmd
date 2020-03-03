@@ -187,7 +187,7 @@ This supports the results the original paper because it indicates that our analy
 
 Using code from Lecture 5:
 
-```{R}
+```{R message=FALSE, warning=FALSE}
 library(ComplexHeatmap)
 library(circlize)
 
