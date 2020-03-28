@@ -146,7 +146,7 @@ conversion_stash <- "data_id_conversion.rds"
 if(file.exists(conversion_stash)){
   data_id_conversion <- readRDS(conversion_stash)
 } else {
-  ensembl <- useMart("ensembl")
+  ensembl <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
   data_id_conversion <- getBM(attributes = c("ensembl_gene_id","hgnc_symbol"),
                             filters = c("ensembl_gene_id"),
                             values = counts$Geneid, #use IDs from before the filtering stage
