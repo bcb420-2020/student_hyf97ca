@@ -1,0 +1,23 @@
+producer_class	xtools.gsea.GseaPreranked
+producer_timestamp	1586142270344
+param	rpt_label	my_analysis2
+param	rnd_seed	timestamp
+param	set_min	15
+param	zip_report	false
+param	create_svgs	false
+param	scoring_scheme	weighted
+param	rnk	E:\docker\volumes\bcb420_course_work\student_hyf97ca\ASXL1_gsea_list.rnk
+param	norm	meandiv
+param	out	C:\Users\hyf97\gsea_home\output\apr05
+param	mode	Max_probe
+param	include_only_symbols	true
+param	help	false
+param	set_max	200
+param	gmx	E:\docker\volumes\bcb420_course_work\student_hyf97ca\Human_GOBP_AllPathways_no_GO_iea_April_01_2020_symbol.gmt
+param	make_sets	true
+param	plot_top_x	20
+param	gui	false
+param	nperm	1000
+param	collapse	No_Collapse
+
+file	C:\Users\hyf97\gsea_home\output\apr05\my_analysis2.GseaPreranked.1586142270344\index.html
