@@ -128,6 +128,9 @@ The GSEA results kind of support the conclusions and/or mechanism discussed in t
 #### 4: Dark matter analysis:
 
 ```{R}
+if(!require(GSA)){
+    install.packages("GSA")
+}
 library(GSA)
 gmt_file <- file.path(getwd(),"data",
                     "Human_GOBP_AllPathways_no_GO_iea_April_01_2020_symbol.gmt")
